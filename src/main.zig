@@ -1,4 +1,5 @@
 const std = @import("std");
+const Io = std.Io;
 const zig_dwmblocks = @import("zig_dwmblocks");
 const Battery = zig_dwmblocks.Battery;
 const Time = zig_dwmblocks.Time;
@@ -10,6 +11,11 @@ pub fn main() !u8 {
     var stdout_buffer: [1024]u8 = undefined;
     var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
     const stdout = &stdout_writer.interface;
+
+    var threaded: Io.Threaded = .init_single_threaded;
+    defer threaded.deinit();
+    const io = threaded.io();
+    // TODO: Print size of IO;
 
     var args = std.process.args();
 
@@ -29,13 +35,14 @@ pub fn main() !u8 {
 
     switch (cmd) {
         .battery => {
-            const b: Battery = try .init();
+            const b: Battery = try .init(io);
             try stdout.print("{f}\n", .{b});
         },
 
         .time => {
-            const t: Time = .now(
-                .from_int(-5),
+            const t: Time = try .now(
+                io,
+                .from_int(-6),
             );
 
             try stdout.print("{f}\n", .{t});

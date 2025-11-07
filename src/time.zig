@@ -1,4 +1,6 @@
 const std = @import("std");
+const Io = std.Io;
+const Clock = Io.Clock;
 const time = std.time;
 const Writer = std.Io.Writer;
 
@@ -24,8 +26,8 @@ pub const Time = struct {
         });
     }
 
-    pub fn now(offset: Hour) Time {
-        var seconds: Second = .now();
+    pub fn now(io: Io, offset: Hour) !Time {
+        var seconds: Second = try .now(io);
         seconds = seconds.with_offset(offset);
 
         var days, seconds = seconds.to_days();
@@ -177,8 +179,9 @@ pub const Time = struct {
     pub const Second = enum(i64) {
         _,
 
-        pub fn now() Second {
-            return @enumFromInt(time.timestamp());
+        pub fn now(io: Io) !Second {
+            const n = try Clock.now(.real, io);
+            return @enumFromInt(n.toSeconds());
         }
 
         fn with_offset(sec: Second, offset: Hour) Second {

@@ -1,4 +1,5 @@
 const std = @import("std");
+const Io = std.Io;
 const fs = std.fs;
 const File = std.fs.File;
 const Writer = std.Io.Writer;
@@ -14,9 +15,9 @@ pub const Battery = struct {
         Full,
     };
 
-    pub fn init() !Battery {
-        const cap = try get_battery_capacity();
-        const status = try get_battery_status();
+    pub fn init(io: Io) !Battery {
+        const cap = try get_battery_capacity(io);
+        const status = try get_battery_status(io);
         return .{
             .capacity = cap,
             .status = status,
@@ -46,24 +47,24 @@ pub const Battery = struct {
         });
     }
 
-    pub fn get_battery_capacity() !u8 {
+    pub fn get_battery_capacity(io: Io) !u8 {
         const f = try fs.openFileAbsolute("/sys/class/power_supply/BAT0/capacity", .{ .mode = .read_only });
         defer f.close();
 
         var buf: [4]u8 = undefined;
-        var r = f.reader(&buf);
+        var r = f.reader(io, &buf);
         var i = &r.interface;
 
         const s = try i.takeDelimiterExclusive('\n');
         return std.fmt.parseInt(u8, s, 10);
     }
 
-    pub fn get_battery_status() !battery_status {
+    pub fn get_battery_status(io: Io) !battery_status {
         const f = try fs.openFileAbsolute("/sys/class/power_supply/BAT0/status", .{ .mode = .read_only });
         defer f.close();
 
         var buf: [32]u8 = undefined;
-        var r = f.reader(&buf);
+        var r = f.reader(io, &buf);
         var i = &r.interface;
 
         const s = try i.takeDelimiterExclusive('\n');
